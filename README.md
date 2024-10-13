@@ -1,6 +1,38 @@
-# Getting Started with Create React App
-
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+📂 Emotional_Friend
+├── 📂 backend
+│ ├── 📄 .env
+│ ├── 📄 server.js
+├── 📂 node_modules
+├── 📂 public
+│ ├── 📄 favicon.ico
+│ ├── 📄 index.html
+│ ├── 📄 logo192.png
+│ ├── 📄 logo512.png
+│ ├── 📄 manifest.json
+│ ├── 📄 robots.txt
+├── 📂 src
+│ ├── 📂 assets
+│ │ ├── 📄 chatbot_image.png
+│ ├── 📂 components
+│ │ ├── 📄 clearChatHistory.tsx
+│ │ ├── 📄 emotionalChatbot.tsx
+│ │ ├── 📄 firebaseFunctions.tsx
+│ │ ├── 📄 Message.tsx
+│ │ ├── 📄 SendMessages.tsx
+│ │ ├── 📄 SignIn.tsx
+│ │ ├── 📄 SignOut.tsx
+│ ├── 📄 App.css
+│ ├── 📄 App.tsx
+│ ├── 📄 firebase.tsx
+│ ├── 📄 index.tsx
+│ ├── 📄 react-app-env.d.ts
+├── 📄 .gitignore
+├── 📄 Dockerfile
+├── 📄 LaunchPad Project Idea.docx
+├── 📄 package-lock.json
+├── 📄 package.json
+├── 📄 README.md
+├── 📄 tsconfig.json
 
 ## Available Scripts
 
@@ -10,9 +42,6 @@ In the project directory, you can run:
 
 Runs the app in the development mode.\
 Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
-
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
 
 ### `npm test`
 

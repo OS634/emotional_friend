@@ -1,24 +1,37 @@
-# dependencies
-/node_modules
-/.pnp
-.pnp.js
+# Node.js dependencies
+**/node_modules/
 
-# testing
-/coverage
+# Build directories
+**/dist/
+**/build/
 
-# production
-/build
+# Logs
+logs/
+*.log
 
-# misc
+# Environment variables
+**/.env
+
+# OS-specific files
 .DS_Store
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
 
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+# IDE files
+.vscode/
+.idea/
 
-# Ignore backend environment variables
-backend/.env
+# Coverage directory
+coverage/
+
+# Yarn specific
+.yarn/
+
+# NPM specific
+package-lock.json
+
+# Optional npm cache directory
+.npm/
+
+# Mac system files
+._*
+
+# Other
