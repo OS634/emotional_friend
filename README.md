@@ -1,38 +1,45 @@
-📂 Emotional_Friend
-├── 📂 backend
-│ ├── 📄 .env
-│ ├── 📄 server.js
-├── 📂 node_modules
-├── 📂 public
-│ ├── 📄 favicon.ico
-│ ├── 📄 index.html
-│ ├── 📄 logo192.png
-│ ├── 📄 logo512.png
-│ ├── 📄 manifest.json
-│ ├── 📄 robots.txt
-├── 📂 src
-│ ├── 📂 assets
-│ │ ├── 📄 chatbot_image.png
-│ ├── 📂 components
-│ │ ├── 📄 clearChatHistory.tsx
-│ │ ├── 📄 emotionalChatbot.tsx
-│ │ ├── 📄 firebaseFunctions.tsx
-│ │ ├── 📄 Message.tsx
-│ │ ├── 📄 SendMessages.tsx
-│ │ ├── 📄 SignIn.tsx
-│ │ ├── 📄 SignOut.tsx
-│ ├── 📄 App.css
-│ ├── 📄 App.tsx
-│ ├── 📄 firebase.tsx
-│ ├── 📄 index.tsx
-│ ├── 📄 react-app-env.d.ts
-├── 📄 .gitignore
-├── 📄 Dockerfile
-├── 📄 LaunchPad Project Idea.docx
-├── 📄 package-lock.json
-├── 📄 package.json
-├── 📄 README.md
-├── 📄 tsconfig.json
+.
+├── backend
+│ ├── .env
+│ ├── package-lock.json
+│ ├── package.json
+│ ├── server.ts
+│ ├── tsconfig.json
+├── frontend
+│ ├── node_modules
+│ ├── public
+│ │ ├── favicon.ico
+│ │ ├── index.html
+│ │ ├── logo192.png
+│ │ ├── logo512.png
+│ │ ├── manifest.json
+│ │ ├── robots.txt
+│ ├── src
+│ │ ├── assets/images
+│ │ │ ├── chatbot_image.png
+│ │ ├── components
+│ │ │ ├── Chat.tsx
+│ │ │ ├── clearChatHistory.tsx
+│ │ │ ├── emotionalChatbot.tsx
+│ │ │ ├── firebaseFunctions.tsx
+│ │ │ ├── Message.tsx
+│ │ │ ├── SendMessages.tsx
+│ │ │ ├── SignIn.tsx
+│ │ │ ├── SignOut.tsx
+│ ├── App.css
+│ ├── App.tsx
+│ ├── firebase.tsx
+│ ├── index.tsx
+│ ├── react-app-env.d.ts
+├── .dockerignore
+├── Dockerfile
+├── docker-compose.yml
+├── .gitignore
+├── LaunchPad Project Idea.docx
+├── package-lock.json
+├── package.json
+├── README.md
+├── tsconfig.json
 
 ## Available Scripts
 
