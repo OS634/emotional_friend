@@ -1,0 +1,108 @@
+.app-container {
+    display: flex;
+}
+
+.chat-sidebar {
+    width: 250px;
+    background-color: #f4f4f4;
+    padding: 20px;
+}
+
+.chat-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.chat-header {
+    display: flex;
+    justify-content: flex-end;
+    padding: 10px;
+}
+
+.clear-chat-button {
+    background-color: #ff4d4f;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    cursor: pointer;
+}
+
+.clear-chat-button:hover {
+    background-color: #ff7875;
+}
+
+.chat-box {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.input-message-container {
+    display: flex;
+    padding: 10px;
+}
+
+.input-message-container input[type="text"] {
+    flex: 1;
+    padding: 8px;
+    margin-right: 10px;
+}
+
+.avatar-image {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+}
+
+.message-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.message {
+    padding: 10px;
+    border-radius: 5px;
+    max-width: 60%;
+}
+
+.message.user {
+    background-color: #dcf8c6;
+    margin-left: auto;
+}
+
+.message.chatbot {
+    background-color: #ececec;
+}
+
+.sidebar-toggle-button {
+    margin-right: auto;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    cursor: pointer;
+}
+
+.sidebar-toggle-button:hover {
+    background-color: #0056b3;
+}
+
+.app-container:not(:has(.chat-sidebar)) .chat-container {
+    width: 100%;
+}
+
+.chat-list-item {
+    cursor: pointer;
+    padding: 8px;
+}
+
+.chat-list-item:hover {
+    background-color: #f0f0f0;
+}
+
+.chat-list-item.active {
+    background-color: #e0e0e0;
+    font-weight: bold;
+}

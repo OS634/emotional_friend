@@ -1,20 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import { auth, provider, signInWithPopup } from '../firebase';
-import { getPastChats, sendMessage as sendMessageToFirebase, deleteMessage as deleteMessageFromFirebase } from './firebaseFunctions';
-import { Message } from './Message';
+import {
+  getUserChats,
+  getChatMessages,
+  sendMessage as sendMessageToFirebase,
+  deleteMessage as deleteMessageFromFirebase,
+  createNewChat,
+} from './firebaseFunctions';
+import Message from './Message';
 import { chatbot } from './emotionalChatbot';
+import ChatSidebar from './ChatSidebar';
 
 const Chat = () => {
   const [messageText, setMessageText] = useState<string>('');
   const [messages, setMessages] = useState<any[]>([]);
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(false);
+  const [currentChatId, setCurrentChatId] = useState<string>('');
+  const [chats, setChats] = useState<any[]>([]);
+  const [sidebarVisible, setSidebarVisible] = useState<boolean>(true); 
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
       if (user) {
         setUser(user);
-        loadMessages(user.uid);
+        await initializeChats(user.uid);
       } else {
         setUser(null);
       }
@@ -22,17 +32,38 @@ const Chat = () => {
 
     return () => unsubscribe();
   }, []);
+  
+  const toggleSidebar = () => {
+    setSidebarVisible(!sidebarVisible);
+  };
 
-  const loadMessages = async (userId: string) => {
-    const userMessages = await getPastChats(userId);
-    setMessages(userMessages);
+  const initializeChats = async (userId: string) => {
+    // Fetch the user's chat sessions
+    const userChats = await getUserChats(userId);
+    setChats(userChats);
+
+    if (userChats.length > 0) {
+      // If chats exist, select the first one
+      setCurrentChatId(userChats[0].id);
+      loadMessages(userId, userChats[0].id);
+    } else {
+      // Create a new chat session if none exist
+      const newChatId = await createNewChat(userId);
+      setCurrentChatId(newChatId);
+      setChats([{ id: newChatId, createdAt: new Date() }]);
+    }
+  };
+
+  const loadMessages = async (userId: string, chatId: string) => {
+    const chatMessages = await getChatMessages(userId, chatId);
+    setMessages(chatMessages);
   };
 
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!user) {
-      console.error('User is not authenticated');
+    if (!user || !currentChatId) {
+      console.error('User is not authenticated or chat not initialized');
       return;
     }
 
@@ -40,18 +71,23 @@ const Chat = () => {
     setLoading(true);
 
     try {
-      // First, send the user's message
-      await sendMessageToFirebase(messageText, userId);
+      const userPhotoURL = user.photoURL || null;
 
-      // Send the user's message to the chatbot API with emotion
+      // Send the user's message
+      await sendMessageToFirebase(messageText, userId, currentChatId, false, userPhotoURL);
+
+      // Send the message to the chatbot API
       const emotion = 'happy'; // Placeholder for emotion detection
       const botResponse = await chatbot(messageText, emotion);
 
-      // Save the chatbot's response to Firestore
-      await sendMessageToFirebase(botResponse, userId, true); // Pass true to indicate it's from the chatbot
+      // Chatbot's photoURL
+      const chatbotPhotoURL = '/assets/chatbot_image.png'; // Ensure this image exists
 
-      setMessageText(''); // Clear the message input
-      loadMessages(userId); // Reload messages after sending
+      // Save the chatbot's response
+      await sendMessageToFirebase(botResponse, userId, currentChatId, true, chatbotPhotoURL);
+
+      setMessageText(''); // Clear the input
+      loadMessages(userId, currentChatId); // Reload messages
     } catch (error) {
       console.error('Error sending message:', error);
     } finally {
@@ -60,23 +96,48 @@ const Chat = () => {
   };
 
   const deleteMessage = async (messageId: string) => {
-    if (!user) {
-      console.error('User is not authenticated');
+    if (!user || !currentChatId) {
+      console.error('User is not authenticated or chat not initialized');
       return;
     }
 
     const userId = user.uid;
 
     try {
-      await deleteMessageFromFirebase(userId, messageId);
-      loadMessages(userId); // Reload messages after deletion
+      await deleteMessageFromFirebase(userId, currentChatId, messageId);
+      loadMessages(userId, currentChatId); // Reload messages
     } catch (error) {
       console.error('Error deleting message:', error);
     }
   };
 
+  const handleSelectChat = (chatId: string) => {
+    if (!user) {
+      console.error('User is not authenticated');
+      return;
+    }
+    setCurrentChatId(chatId);
+    loadMessages(user.uid, chatId);
+  };
+
   const signOut = () => {
     auth.signOut();
+  };
+  const handleCreateNewChat = async () => {
+    if (!user) {
+      console.error('User is not authenticated');
+      return;
+    }
+    const userId = user.uid;
+
+    try {
+      const newChatId = await createNewChat(userId);
+      setChats([{ id: newChatId, createdAt: new Date() }, ...chats]);
+      setCurrentChatId(newChatId);
+      setMessages([]);
+    } catch (error) {
+      console.error('Error creating new chat:', error);
+    }
   };
 
   const signInWithGoogle = () => {
@@ -99,36 +160,48 @@ const Chat = () => {
   }
 
   return (
-    <div className="chat-container">
-      <div className="header">
-        <span className="username">{user.displayName}</span>
-        <button onClick={signOut}>Sign Out</button>
+    <div className="app-container">
+      <ChatSidebar
+        userId={user.uid}
+        onSelectChat={handleSelectChat}
+        chats={chats}
+        onCreateNewChat={handleCreateNewChat}
+        currentChatId={currentChatId}
+      />
+      <div className="chat-container">
+        <div className="header">
+          <button onClick={toggleSidebar} className="sidebar-toggle-button">
+            {sidebarVisible ? 'Hide Sidebar' : 'Show Sidebar'}
+          </button>
+          <span className="username">{user.displayName}</span>
+          <button onClick={signOut}>Sign Out</button>
+        </div>
+        <div className="chat-box">
+          {messages.length === 0 ? (
+            <p>No messages yet. Start a conversation!</p>
+          ) : (
+            messages.map((msg) => (
+              <Message
+                key={msg.id}
+                messageId={msg.id}
+                messageText={msg.text}
+                photoURL={msg.photoURL}
+                isUser={msg.uid === user.uid}
+                onDelete={deleteMessage}
+              />
+            ))
+          )}
+        </div>
+        <form onSubmit={sendMessage} className="input-message-container">
+          <input
+            type="text"
+            value={messageText}
+            onChange={(e) => setMessageText(e.target.value)}
+            placeholder="Type your message"
+          />
+          <input type="submit" value={loading ? 'Sending...' : 'Send'} disabled={loading} />
+        </form>
       </div>
-      <div className="chat-box">
-        {messages.length === 0 ? (
-          <p>No messages yet. Start a conversation!</p>
-        ) : (
-          messages.map((msg) => (
-            <Message
-              key={msg.id}
-              messageId={msg.id}
-              messageText={msg.text}
-              photoURL={msg.photoURL}
-              isUser={msg.uid === user.uid}
-              onDelete={deleteMessage}
-            />
-          ))
-        )}
-      </div>
-      <form onSubmit={sendMessage} className="input-message-container">
-        <input
-          type="text"
-          value={messageText}
-          onChange={(e) => setMessageText(e.target.value)}
-          placeholder="Type your message"
-        />
-        <input type="submit" value={loading ? 'Sending...' : 'Send'} disabled={loading} />
-      </form>
     </div>
   );
 };

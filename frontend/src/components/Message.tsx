@@ -8,10 +8,16 @@ export interface MessageProps {
   onDelete: (messageId: string) => void;
 }
 
-export const Message: React.FC<MessageProps> = ({ messageId, messageText, photoURL, isUser, onDelete }) => {
+const Message: React.FC<MessageProps> = ({
+  messageId,
+  messageText,
+  photoURL,
+  isUser,
+  onDelete,
+}) => {
   return (
     <div className={`message-row ${isUser ? 'user' : 'chatbot'}`}>
-      {photoURL && <img src={photoURL} alt="Avatar" />}
+      {photoURL && <img src={photoURL} alt="Avatar" className="avatar-image" />}
       <div className={`message ${isUser ? 'user' : 'chatbot'}`}>
         {messageText}
       </div>

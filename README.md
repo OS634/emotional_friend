@@ -65,6 +65,10 @@ Your app is ready to be deployed!
 
 See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
 
+### `npx tsc`
+
+To convert typescript files to javascript
+
 ### Reference
 
 - https://www.youtube.com/watch?v=Js9BsBsczE8

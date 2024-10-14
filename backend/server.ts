@@ -45,3 +45,9 @@ app.post('/chatbot', async (req: Request, res: Response) => {
 // Start the server
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => console.log(`Backend server running on port ${PORT}`));
+app.get('/', (req: Request, res: Response) => {
+  res.send('Welcome to the Emotional Friend Backend API!');
+});
+app.use(cors({
+  origin: 'http://localhost:3000'
+}));

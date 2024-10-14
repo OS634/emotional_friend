@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import {
-  getPastChats,
+  getUserChats,
+  getChatMessages,
   sendMessage as sendMessageToFirebase,
   clearChatHistory,
   deleteMessage as deleteMessageFromFirebase,
+  createNewChat,
 } from './firebaseFunctions';
 import Message from './Message';
-import ClearChat from './clearChatHistory';
+import ChatSidebar from './ChatSidebar';
 import { auth } from '../firebase';
 
 interface MessageType {
@@ -26,15 +28,33 @@ const EmotionalChatbot: React.FC<EmotionalChatbotProps> = ({ userId }) => {
   const [messages, setMessages] = useState<MessageType[]>([]);
   const [messageText, setMessageText] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
+  const [currentChatId, setCurrentChatId] = useState<string>('');
+  const [chats, setChats] = useState<any[]>([]);
 
   useEffect(() => {
-    const fetchMessages = async () => {
-      const userMessages = await getPastChats(userId);
-      setMessages(userMessages);
+    const fetchChats = async () => {
+      const userChats = await getUserChats(userId);
+      setChats(userChats);
+
+      if (userChats.length > 0) {
+        // If chats exist, select the first one
+        setCurrentChatId(userChats[0].id);
+        fetchMessages(userChats[0].id);
+      } else {
+        // Create a new chat if none exist
+        const newChatId = await createNewChat(userId);
+        setCurrentChatId(newChatId);
+        setChats([{ id: newChatId, createdAt: new Date() }]);
+      }
     };
 
-    fetchMessages();
+    fetchChats();
   }, [userId]);
+
+  const fetchMessages = async (chatId: string) => {
+    const chatMessages = await getChatMessages(userId, chatId);
+    setMessages(chatMessages);
+  };
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,21 +64,20 @@ const EmotionalChatbot: React.FC<EmotionalChatbotProps> = ({ userId }) => {
       const userPhotoURL = auth.currentUser?.photoURL || null;
 
       // Send the user's message
-      await sendMessageToFirebase(messageText, userId, false, userPhotoURL);
+      await sendMessageToFirebase(messageText, userId, currentChatId, false, userPhotoURL);
 
       // Send the user's message to the chatbot API with emotion
       const emotion = 'happy'; // Placeholder for emotion detection
       const botResponse = await chatbot(messageText, emotion);
 
       // Chatbot's photoURL
-      const chatbotPhotoURL = '/assets/chatbot_image.png'; // Ensure this path is correct and the image exists
+      const chatbotPhotoURL = '/assets/chatbot_image.png'; // Ensure this path is correct
 
       // Save the chatbot's response to Firestore
-      await sendMessageToFirebase(botResponse, userId, true, chatbotPhotoURL);
+      await sendMessageToFirebase(botResponse, userId, currentChatId, true, chatbotPhotoURL);
 
       // Fetch updated messages
-      const userMessages = await getPastChats(userId);
-      setMessages(userMessages);
+      fetchMessages(currentChatId);
 
       setMessageText(''); // Clear input after sending
     } catch (error) {
@@ -70,10 +89,9 @@ const EmotionalChatbot: React.FC<EmotionalChatbotProps> = ({ userId }) => {
 
   const deleteMessage = async (messageId: string) => {
     try {
-      await deleteMessageFromFirebase(userId, messageId);
+      await deleteMessageFromFirebase(userId, currentChatId, messageId);
       // Fetch updated messages after deletion
-      const userMessages = await getPastChats(userId);
-      setMessages(userMessages);
+      fetchMessages(currentChatId);
     } catch (error) {
       console.error('Error deleting message:', error);
     }
@@ -81,45 +99,69 @@ const EmotionalChatbot: React.FC<EmotionalChatbotProps> = ({ userId }) => {
 
   const handleClearChat = async () => {
     try {
-      await clearChatHistory(userId);
+      await clearChatHistory(userId, currentChatId);
       setMessages([]);
     } catch (error) {
       console.error('Error clearing chat history:', error);
     }
   };
 
+  const handleSelectChat = (chatId: string) => {
+    setCurrentChatId(chatId);
+    fetchMessages(chatId);
+  };
+
+  const handleCreateNewChat = async () => {
+    try {
+      const newChatId = await createNewChat(userId);
+      setChats([{ id: newChatId, createdAt: new Date() }, ...chats]);
+      setCurrentChatId(newChatId);
+      setMessages([]);
+    } catch (error) {
+      console.error('Error creating new chat:', error);
+    }
+  };
+
   return (
-    <div className="chat-container">
-      <div className="chat-box">
-        {messages.length === 0 ? (
-          <p>No messages yet. Start a conversation!</p>
-        ) : (
-          messages.map((msg) => (
-            <Message
-              key={msg.id}
-              messageId={msg.id}
-              messageText={msg.text}
-              photoURL={msg.photoURL}
-              isUser={msg.uid === userId}
-              onDelete={deleteMessage}
-            />
-          ))
-        )}
+    <div className="app-container">
+      <ChatSidebar
+        userId={userId}
+        chats={chats}
+        onSelectChat={handleSelectChat}
+        onCreateNewChat={handleCreateNewChat}
+      />
+      <div className="chat-container">
+        <div className="chat-header">
+          <button onClick={handleClearChat} className="clear-chat-button">
+            Clear Chat History
+          </button>
+        </div>
+        <div className="chat-box">
+          {messages.length === 0 ? (
+            <p>No messages yet. Start a conversation!</p>
+          ) : (
+            messages.map((msg) => (
+              <Message
+                key={msg.id}
+                messageId={msg.id}
+                messageText={msg.text}
+                photoURL={msg.photoURL}
+                isUser={msg.uid === userId}
+                onDelete={deleteMessage}
+              />
+            ))
+          )}
+        </div>
+        <form onSubmit={handleSendMessage} className="input-message-container">
+          <input
+            type="text"
+            value={messageText}
+            onChange={(e) => setMessageText(e.target.value)}
+            placeholder="Type your message"
+          />
+          <input type="submit" value={loading ? 'Sending...' : 'Send'} disabled={loading} />
+        </form>
       </div>
-
-      {/* Form for sending a message */}
-      <form onSubmit={handleSendMessage} className="input-message-container">
-        <input
-          type="text"
-          value={messageText}
-          onChange={(e) => setMessageText(e.target.value)}
-          placeholder="Type your message"
-        />
-        <input type="submit" value={loading ? 'Sending...' : 'Send'} disabled={loading} />
-      </form>
-
-      {/* Button to clear the chat */}
-      <ClearChat userId={userId} onClear={handleClearChat} />
     </div>
   );
 };
@@ -127,11 +169,9 @@ const EmotionalChatbot: React.FC<EmotionalChatbotProps> = ({ userId }) => {
 // Function for communicating with the backend chatbot API
 export async function chatbot(userInput: string, emotion: string): Promise<string> {
   try {
-    const response = await fetch('http://localhost:5000/chatbot', {
+    const response = await fetch('http://localhost:5001/chatbot', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userInput, emotion }),
     });
 
