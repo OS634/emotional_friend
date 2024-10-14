@@ -129,6 +129,7 @@ const EmotionalChatbot: React.FC<EmotionalChatbotProps> = ({ userId }) => {
         chats={chats}
         onSelectChat={handleSelectChat}
         onCreateNewChat={handleCreateNewChat}
+        currentChatId={currentChatId} 
       />
       <div className="chat-container">
         <div className="chat-header">
