@@ -1,6 +1,45 @@
-# Getting Started with Create React App
-
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+.
+├── backend
+│ ├── .env
+│ ├── package-lock.json
+│ ├── package.json
+│ ├── server.ts
+│ ├── tsconfig.json
+├── frontend
+│ ├── node_modules
+│ ├── public
+│ │ ├── favicon.ico
+│ │ ├── index.html
+│ │ ├── logo192.png
+│ │ ├── logo512.png
+│ │ ├── manifest.json
+│ │ ├── robots.txt
+│ ├── src
+│ │ ├── assets/images
+│ │ │ ├── chatbot_image.png
+│ │ ├── components
+│ │ │ ├── Chat.tsx
+│ │ │ ├── clearChatHistory.tsx
+│ │ │ ├── emotionalChatbot.tsx
+│ │ │ ├── firebaseFunctions.tsx
+│ │ │ ├── Message.tsx
+│ │ │ ├── SendMessages.tsx
+│ │ │ ├── SignIn.tsx
+│ │ │ ├── SignOut.tsx
+│ ├── App.css
+│ ├── App.tsx
+│ ├── firebase.tsx
+│ ├── index.tsx
+│ ├── react-app-env.d.ts
+├── .dockerignore
+├── Dockerfile
+├── docker-compose.yml
+├── .gitignore
+├── LaunchPad Project Idea.docx
+├── package-lock.json
+├── package.json
+├── README.md
+├── tsconfig.json
 
 ## Available Scripts
 
@@ -10,9 +49,6 @@ In the project directory, you can run:
 
 Runs the app in the development mode.\
 Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
-
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
 
 ### `npm test`
 
@@ -28,6 +64,10 @@ The build is minified and the filenames include the hashes.\
 Your app is ready to be deployed!
 
 See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+
+### `npx tsc`
+
+To convert typescript files to javascript
 
 ### Reference
 

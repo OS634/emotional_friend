@@ -1,0 +1,164 @@
+/* App Container */
+.app-container {
+    display: flex;
+    height: 100vh;
+}
+
+/* Chat Sidebar */
+.chat-sidebar {
+    width: 250px;
+    background-color: #e5eff5;
+    padding: 20px;
+    overflow-y: auto;
+    flex-shrink: 0;
+    /* Prevent the sidebar from shrinking */
+    transition: transform 0.3s ease;
+    /* Add transition for smooth hiding/showing */
+}
+
+.chat-sidebar.hidden {
+    transform: translateX(-100%);
+    /* Hide the sidebar by moving it left */
+    width: 0;
+    /* Ensure the sidebar doesn't occupy space when hidden */
+    padding: 0;
+    /* Remove padding when sidebar is hidden */
+}
+
+/* Chat Container */
+.chat-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    margin-left: 0;
+    transition: margin-left 0.3s ease;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    padding: 10px;
+    background-color: black;
+}
+
+.sidebar-toggle-button {
+    position: absolute;
+    left: 10px;
+}
+
+.signout-button {
+    position: absolute;
+    right: 10px;
+}
+
+.username {
+    font-size: 1.2em;
+    font-weight: bold;
+}
+
+/* Chat Box */
+.chat-box {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+    background-color: #caffff;
+}
+
+/* Input Message Container */
+.input-message-container {
+    display: flex;
+    padding: 10px;
+    margin: 0;
+    /* Ensure there's no margin */
+}
+
+.input-message-container input[type='text'] {
+    flex: 1;
+    padding: 8px;
+    margin-right: 10px;
+}
+
+.input-message-container input[type='submit'] {
+    padding: 8px 16px;
+}
+
+/* Message Row */
+.message-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.message-row.user {
+    justify-content: flex-end;
+}
+
+.message-row.chatbot {
+    justify-content: flex-start;
+}
+
+/* Message Bubble */
+.message {
+    padding: 10px;
+    border-radius: 5px;
+    max-width: 60%;
+    word-wrap: break-word;
+}
+
+.user-message {
+    background-color: #dcf8c6;
+    margin: 0 10px;
+}
+
+.chatbot-message {
+    background-color: #ececec;
+    margin: 0 10px;
+}
+
+/* Avatar Image */
+.avatar-image {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+/* Delete Button */
+.delete-button {
+    background: none;
+    border: none;
+    color: red;
+    cursor: pointer;
+}
+
+/* Chat List Item */
+.chat-list-item {
+    padding: 8px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+}
+
+.chat-list-item:hover {
+    background-color: #e0e0e0;
+}
+
+.chat-list-item.active {
+    background-color: #d0d0d0;
+    font-weight: bold;
+}
+
+/* Chat Actions */
+.chat-actions button {
+    margin-left: 5px;
+    background: none;
+    border: none;
+    color: blue;
+    cursor: pointer;
+}
+
+.chat-actions button:hover {
+    text-decoration: underline;
+}
