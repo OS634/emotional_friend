@@ -6,6 +6,8 @@ import {
   clearChatHistory,
   deleteMessage as deleteMessageFromFirebase,
   createNewChat,
+  deleteChatSession,
+  renameChatSession,
 } from './firebaseFunctions';
 import Message from './Message';
 import ChatSidebar from './ChatSidebar';
@@ -30,6 +32,7 @@ const EmotionalChatbot: React.FC<EmotionalChatbotProps> = ({ userId }) => {
   const [loading, setLoading] = useState<boolean>(false);
   const [currentChatId, setCurrentChatId] = useState<string>('');
   const [chats, setChats] = useState<any[]>([]);
+  const [sidebarVisible, setSidebarVisible] = useState<boolean>(true);
 
   useEffect(() => {
     const fetchChats = async () => {
@@ -37,14 +40,12 @@ const EmotionalChatbot: React.FC<EmotionalChatbotProps> = ({ userId }) => {
       setChats(userChats);
 
       if (userChats.length > 0) {
-        // If chats exist, select the first one
         setCurrentChatId(userChats[0].id);
         fetchMessages(userChats[0].id);
       } else {
-        // Create a new chat if none exist
         const newChatId = await createNewChat(userId);
         setCurrentChatId(newChatId);
-        setChats([{ id: newChatId, createdAt: new Date() }]);
+        setChats([{ id: newChatId, createdAt: new Date(), name: `Chat ${new Date().toLocaleString()}` }]);
       }
     };
 
@@ -63,23 +64,18 @@ const EmotionalChatbot: React.FC<EmotionalChatbotProps> = ({ userId }) => {
     try {
       const userPhotoURL = auth.currentUser?.photoURL || null;
 
-      // Send the user's message
       await sendMessageToFirebase(messageText, userId, currentChatId, false, userPhotoURL);
 
-      // Send the user's message to the chatbot API with emotion
       const emotion = 'happy'; // Placeholder for emotion detection
       const botResponse = await chatbot(messageText, emotion);
 
-      // Chatbot's photoURL
-      const chatbotPhotoURL = '/assets/chatbot_image.png'; // Ensure this path is correct
+      const chatbotPhotoURL = '../assets/images/chatbot_image.png';
 
-      // Save the chatbot's response to Firestore
       await sendMessageToFirebase(botResponse, userId, currentChatId, true, chatbotPhotoURL);
 
-      // Fetch updated messages
       fetchMessages(currentChatId);
 
-      setMessageText(''); // Clear input after sending
+      setMessageText('');
     } catch (error) {
       console.error('Error sending message:', error);
     } finally {
@@ -90,7 +86,6 @@ const EmotionalChatbot: React.FC<EmotionalChatbotProps> = ({ userId }) => {
   const deleteMessage = async (messageId: string) => {
     try {
       await deleteMessageFromFirebase(userId, currentChatId, messageId);
-      // Fetch updated messages after deletion
       fetchMessages(currentChatId);
     } catch (error) {
       console.error('Error deleting message:', error);
@@ -114,7 +109,12 @@ const EmotionalChatbot: React.FC<EmotionalChatbotProps> = ({ userId }) => {
   const handleCreateNewChat = async () => {
     try {
       const newChatId = await createNewChat(userId);
-      setChats([{ id: newChatId, createdAt: new Date() }, ...chats]);
+      const newChat = {
+        id: newChatId,
+        createdAt: new Date(),
+        name: `Chat ${new Date().toLocaleString()}`,
+      };
+      setChats([newChat, ...chats]);
       setCurrentChatId(newChatId);
       setMessages([]);
     } catch (error) {
@@ -122,20 +122,58 @@ const EmotionalChatbot: React.FC<EmotionalChatbotProps> = ({ userId }) => {
     }
   };
 
+  const handleDeleteChat = async (chatId: string) => {
+    try {
+      await deleteChatSession(userId, chatId);
+      const updatedChats = chats.filter((chat) => chat.id !== chatId);
+      setChats(updatedChats);
+
+      if (updatedChats.length > 0) {
+        setCurrentChatId(updatedChats[0].id);
+        fetchMessages(updatedChats[0].id);
+      } else {
+        await handleCreateNewChat();
+      }
+    } catch (error) {
+      console.error('Error deleting chat:', error);
+    }
+  };
+
+  const handleRenameChat = async (chatId: string, newName: string) => {
+    try {
+      await renameChatSession(userId, chatId, newName);
+      const updatedChats = chats.map((chat) =>
+        chat.id === chatId ? { ...chat, name: newName } : chat
+      );
+      setChats(updatedChats);
+    } catch (error) {
+      console.error('Error renaming chat:', error);
+    }
+  };
+
+  const toggleSidebar = () => {
+    setSidebarVisible(!sidebarVisible);
+  };
+
   return (
     <div className="app-container">
-      <ChatSidebar
-        userId={userId}
-        chats={chats}
-        onSelectChat={handleSelectChat}
-        onCreateNewChat={handleCreateNewChat}
-        currentChatId={currentChatId} 
-      />
-      <div className="chat-container">
-        <div className="chat-header">
-          <button onClick={handleClearChat} className="clear-chat-button">
-            Clear Chat History
+      {sidebarVisible && (
+        <ChatSidebar
+          userId={userId}
+          chats={chats}
+          onSelectChat={handleSelectChat}
+          onCreateNewChat={handleCreateNewChat}
+          onDeleteChat={handleDeleteChat}
+          onRenameChat={handleRenameChat}
+          currentChatId={currentChatId}
+        />
+      )}
+      <div className={`chat-container ${sidebarVisible ? '' : 'expanded'}`}>
+        <div className="header">
+          <button onClick={toggleSidebar} className="sidebar-toggle-button">
+            {sidebarVisible ? 'Hide Sidebar' : 'Show Sidebar'}
           </button>
+          <span className="username">{auth.currentUser?.displayName}</span>
         </div>
         <div className="chat-box">
           {messages.length === 0 ? (

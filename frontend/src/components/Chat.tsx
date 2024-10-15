@@ -6,6 +6,8 @@ import {
   sendMessage as sendMessageToFirebase,
   deleteMessage as deleteMessageFromFirebase,
   createNewChat,
+  deleteChatSession,
+  renameChatSession,
 } from './firebaseFunctions';
 import Message from './Message';
 import { chatbot } from './emotionalChatbot';
@@ -18,7 +20,7 @@ const Chat = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [currentChatId, setCurrentChatId] = useState<string>('');
   const [chats, setChats] = useState<any[]>([]);
-  const [sidebarVisible, setSidebarVisible] = useState<boolean>(true); 
+  const [sidebarVisible, setSidebarVisible] = useState<boolean>(true);
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
@@ -32,25 +34,24 @@ const Chat = () => {
 
     return () => unsubscribe();
   }, []);
-  
-  const toggleSidebar = () => {
-    setSidebarVisible(!sidebarVisible);
-  };
 
   const initializeChats = async (userId: string) => {
-    // Fetch the user's chat sessions
     const userChats = await getUserChats(userId);
     setChats(userChats);
 
     if (userChats.length > 0) {
-      // If chats exist, select the first one
       setCurrentChatId(userChats[0].id);
       loadMessages(userId, userChats[0].id);
     } else {
-      // Create a new chat session if none exist
       const newChatId = await createNewChat(userId);
       setCurrentChatId(newChatId);
-      setChats([{ id: newChatId, createdAt: new Date() }]);
+      setChats([
+        {
+          id: newChatId,
+          createdAt: new Date(),
+          name: `Chat ${new Date().toLocaleString()}`,
+        },
+      ]);
     }
   };
 
@@ -73,21 +74,30 @@ const Chat = () => {
     try {
       const userPhotoURL = user.photoURL || null;
 
-      // Send the user's message
-      await sendMessageToFirebase(messageText, userId, currentChatId, false, userPhotoURL);
+      await sendMessageToFirebase(
+        messageText,
+        userId,
+        currentChatId,
+        false,
+        userPhotoURL
+      );
 
-      // Send the message to the chatbot API
       const emotion = 'happy'; // Placeholder for emotion detection
       const botResponse = await chatbot(messageText, emotion);
 
       // Chatbot's photoURL
-      const chatbotPhotoURL = '/assets/chatbot_image.png'; // Ensure this image exists
+      const chatbotPhotoURL = '/assets/images/chatbot_image.png'; // Updated path
 
-      // Save the chatbot's response
-      await sendMessageToFirebase(botResponse, userId, currentChatId, true, chatbotPhotoURL);
+      await sendMessageToFirebase(
+        botResponse,
+        userId,
+        currentChatId,
+        true,
+        chatbotPhotoURL
+      );
 
-      setMessageText(''); // Clear the input
-      loadMessages(userId, currentChatId); // Reload messages
+      setMessageText('');
+      loadMessages(userId, currentChatId);
     } catch (error) {
       console.error('Error sending message:', error);
     } finally {
@@ -105,7 +115,7 @@ const Chat = () => {
 
     try {
       await deleteMessageFromFirebase(userId, currentChatId, messageId);
-      loadMessages(userId, currentChatId); // Reload messages
+      loadMessages(userId, currentChatId);
     } catch (error) {
       console.error('Error deleting message:', error);
     }
@@ -120,9 +130,6 @@ const Chat = () => {
     loadMessages(user.uid, chatId);
   };
 
-  const signOut = () => {
-    auth.signOut();
-  };
   const handleCreateNewChat = async () => {
     if (!user) {
       console.error('User is not authenticated');
@@ -132,12 +139,66 @@ const Chat = () => {
 
     try {
       const newChatId = await createNewChat(userId);
-      setChats([{ id: newChatId, createdAt: new Date() }, ...chats]);
+      const newChat = {
+        id: newChatId,
+        createdAt: new Date(),
+        name: `Chat ${new Date().toLocaleString()}`,
+      };
+      setChats([newChat, ...chats]);
       setCurrentChatId(newChatId);
       setMessages([]);
     } catch (error) {
       console.error('Error creating new chat:', error);
     }
+  };
+
+  const handleDeleteChat = async (chatId: string) => {
+    if (!user) {
+      console.error('User is not authenticated');
+      return;
+    }
+    const userId = user.uid;
+
+    try {
+      await deleteChatSession(userId, chatId);
+      const updatedChats = chats.filter((chat) => chat.id !== chatId);
+      setChats(updatedChats);
+
+      if (updatedChats.length > 0) {
+        setCurrentChatId(updatedChats[0].id);
+        loadMessages(userId, updatedChats[0].id);
+      } else {
+        await handleCreateNewChat();
+      }
+    } catch (error) {
+      console.error('Error deleting chat:', error);
+    }
+  };
+
+  const handleRenameChat = async (chatId: string, newName: string) => {
+    if (!user) {
+      console.error('User is not authenticated');
+      return;
+    }
+    const userId = user.uid;
+
+    try {
+      await renameChatSession(userId, chatId, newName);
+      const updatedChats = chats.map((chat) =>
+        chat.id === chatId ? { ...chat, name: newName } : chat
+      );
+      setChats(updatedChats);
+    } catch (error) {
+      console.error('Error renaming chat:', error);
+    }
+  };
+
+  const toggleSidebar = () => {
+    setSidebarVisible(!sidebarVisible);
+  };
+
+  const signOut = () => {
+    auth.signOut();
   };
 
   const signInWithGoogle = () => {
@@ -161,20 +222,26 @@ const Chat = () => {
 
   return (
     <div className="app-container">
-      <ChatSidebar
-        userId={user.uid}
-        onSelectChat={handleSelectChat}
-        chats={chats}
-        onCreateNewChat={handleCreateNewChat}
-        currentChatId={currentChatId}
-      />
-      <div className="chat-container">
+      {sidebarVisible && (
+        <ChatSidebar
+          userId={user.uid}
+          onSelectChat={handleSelectChat}
+          chats={chats}
+          onCreateNewChat={handleCreateNewChat}
+          onDeleteChat={handleDeleteChat}
+          onRenameChat={handleRenameChat}
+          currentChatId={currentChatId}
+        />
+      )}
+      <div className={`chat-container ${sidebarVisible ? '' : 'expanded'}`}>
         <div className="header">
           <button onClick={toggleSidebar} className="sidebar-toggle-button">
             {sidebarVisible ? 'Hide Sidebar' : 'Show Sidebar'}
           </button>
           <span className="username">{user.displayName}</span>
-          <button onClick={signOut}>Sign Out</button>
+          <button onClick={signOut} className="signout-button">
+            Sign Out
+          </button>
         </div>
         <div className="chat-box">
           {messages.length === 0 ? (
@@ -199,7 +266,11 @@ const Chat = () => {
             onChange={(e) => setMessageText(e.target.value)}
             placeholder="Type your message"
           />
-          <input type="submit" value={loading ? 'Sending...' : 'Send'} disabled={loading} />
+          <input
+            type="submit"
+            value={loading ? 'Sending...' : 'Send'}
+            disabled={loading}
+          />
         </form>
       </div>
     </div>

@@ -7,6 +7,7 @@ import {
   getDocs,
   addDoc,
   deleteDoc,
+  updateDoc,
   Timestamp,
   writeBatch,
   DocumentData,
@@ -39,9 +40,10 @@ export const getUserChats = async (userId: string): Promise<ChatType[]> => {
     const querySnapshot: QuerySnapshot<DocumentData> = await getDocs(chatsQuery);
     const chats: ChatType[] = querySnapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => {
       const data = doc.data();
+      const createdAt = data.createdAt ? data.createdAt.toDate() : new Date();
       return {
         id: doc.id,
-        name: data.name || '',
+        name: data.name || `Chat ${createdAt.toLocaleString()}`,
         createdAt: data.createdAt || Timestamp.now(),
       };
     });
@@ -57,17 +59,31 @@ export const getUserChats = async (userId: string): Promise<ChatType[]> => {
 export const createNewChat = async (userId: string): Promise<string> => {
   try {
     const chatsCollection = collection(db, `users/${userId}/chats`);
+
     const now = new Date();
-    const formattedDate = format(now, 'dd/MM/yyyy HH:mm');
-    const chatName = `Chat ${formattedDate}`;
+    const chatName = `Chat ${now.toLocaleString()}`;
 
     const chatDoc = await addDoc(chatsCollection, {
       name: chatName,
-      createdAt: Timestamp.now(),
+      createdAt: Timestamp.fromDate(now),
     });
     return chatDoc.id;
   } catch (error) {
     console.error('Error creating new chat:', error);
+    throw error;
+  }
+};
+
+export const renameChatSession = async (
+  userId: string,
+  chatId: string,
+  newName: string
+): Promise<void> => {
+  try {
+    const chatDocRef = doc(db, `users/${userId}/chats`, chatId);
+    await updateDoc(chatDocRef, { name: newName });
+  } catch (error) {
+    console.error('Error renaming chat session:', error);
     throw error;
   }
 };
@@ -125,7 +141,6 @@ export const sendMessage = async (
   }
 };
 
-// Function to delete a single message in a chat session
 export const deleteMessage = async (
   userId: string,
   chatId: string,
@@ -136,6 +151,29 @@ export const deleteMessage = async (
     await deleteDoc(messageDocRef);
   } catch (error) {
     console.error('Error deleting message:', error);
+    throw error;
+  }
+};
+
+// Function to delete a single message in a chat session
+export const deleteChatSession = async (userId: string, chatId: string): Promise<void> => {
+  try {
+    const messagesCollection = collection(db, `users/${userId}/chats/${chatId}/messages`);
+    const messagesQuery = query(messagesCollection);
+    const querySnapshot = await getDocs(messagesQuery);
+    const batch = writeBatch(db);
+
+    querySnapshot.forEach((doc) => {
+      batch.delete(doc.ref);
+    });
+
+    await batch.commit();
+
+    const chatDocRef = doc(db, `users/${userId}/chats`, chatId);
+    await deleteDoc(chatDocRef);
+  } catch (error) {
+    console.error('Error deleting chat session:', error);
+    throw error;
   }
 };
 
@@ -156,19 +194,5 @@ export const clearChatHistory = async (userId: string, chatId: string): Promise<
     await batch.commit();
   } catch (error) {
     console.error('Error clearing chat history:', error);
-  }
-};
-
-// Function to delete an entire chat session
-export const deleteChatSession = async (userId: string, chatId: string): Promise<void> => {
-  try {
-    // First delete all messages in the chat
-    await clearChatHistory(userId, chatId);
-
-    // Then delete the chat document itself
-    const chatDocRef = doc(db, `users/${userId}/chats`, chatId);
-    await deleteDoc(chatDocRef);
-  } catch (error) {
-    console.error('Error deleting chat session:', error);
   }
 };

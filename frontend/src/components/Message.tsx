@@ -1,6 +1,6 @@
 import React from 'react';
 
-export interface MessageProps {
+interface MessageProps {
   messageId: string;
   messageText: string;
   photoURL: string | null;
@@ -17,11 +17,15 @@ const Message: React.FC<MessageProps> = ({
 }) => {
   return (
     <div className={`message-row ${isUser ? 'user' : 'chatbot'}`}>
-      {photoURL && <img src={photoURL} alt="Avatar" className="avatar-image" />}
-      <div className={`message ${isUser ? 'user' : 'chatbot'}`}>
+      {photoURL && (
+        <img src={photoURL} alt="Avatar" className="avatar-image" />
+      )}
+      <div className={`message ${isUser ? 'user-message' : 'chatbot-message'}`}>
         {messageText}
       </div>
-      <button onClick={() => onDelete(messageId)}>Delete</button>
+      <button onClick={() => onDelete(messageId)} className="delete-button">
+        Delete
+      </button>
     </div>
   );
 };
