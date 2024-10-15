@@ -17,15 +17,28 @@ const Message: React.FC<MessageProps> = ({
 }) => {
   return (
     <div className={`message-row ${isUser ? 'user' : 'chatbot'}`}>
-      {photoURL && (
-        <img src={photoURL} alt="Avatar" className="avatar-image" />
+      {isUser ? (
+        <>
+          <button onClick={() => onDelete(messageId)} className="delete-button">
+            Delete
+          </button>
+          <div className="message user-message">{messageText}</div>
+          {/* display picture */}
+          {/* {photoURL && (
+            <img src={photoURL} alt="Avatar" className="avatar-image" />
+          )} */}
+        </>
+      ) : (
+        <>
+          {photoURL && (
+            <img src={photoURL} alt="Avatar" className="avatar-image" />
+          )}
+          <div className="message chatbot-message">{messageText}</div>
+          <button onClick={() => onDelete(messageId)} className="delete-button">
+            Delete
+          </button>
+        </>
       )}
-      <div className={`message ${isUser ? 'user-message' : 'chatbot-message'}`}>
-        {messageText}
-      </div>
-      <button onClick={() => onDelete(messageId)} className="delete-button">
-        Delete
-      </button>
     </div>
   );
 };

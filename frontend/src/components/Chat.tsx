@@ -43,15 +43,9 @@ const Chat = () => {
       setCurrentChatId(userChats[0].id);
       loadMessages(userId, userChats[0].id);
     } else {
-      const newChatId = await createNewChat(userId);
-      setCurrentChatId(newChatId);
-      setChats([
-        {
-          id: newChatId,
-          createdAt: new Date(),
-          name: `Chat ${new Date().toLocaleString()}`,
-        },
-      ]);
+      // No chats available
+      setCurrentChatId('');
+      setMessages([]);
     }
   };
 
@@ -168,7 +162,8 @@ const Chat = () => {
         setCurrentChatId(updatedChats[0].id);
         loadMessages(userId, updatedChats[0].id);
       } else {
-        await handleCreateNewChat();
+        setCurrentChatId('');
+        setMessages([]);
       }
     } catch (error) {
       console.error('Error deleting chat:', error);
@@ -220,20 +215,20 @@ const Chat = () => {
     );
   }
 
+
   return (
     <div className="app-container">
-      {sidebarVisible && (
-        <ChatSidebar
-          userId={user.uid}
-          onSelectChat={handleSelectChat}
-          chats={chats}
-          onCreateNewChat={handleCreateNewChat}
-          onDeleteChat={handleDeleteChat}
-          onRenameChat={handleRenameChat}
-          currentChatId={currentChatId}
-        />
-      )}
-      <div className={`chat-container ${sidebarVisible ? '' : 'expanded'}`}>
+      <ChatSidebar
+        userId={user.uid}
+        onSelectChat={handleSelectChat}
+        chats={chats}
+        onCreateNewChat={handleCreateNewChat}
+        onDeleteChat={handleDeleteChat}
+        onRenameChat={handleRenameChat}
+        currentChatId={currentChatId}
+        sidebarVisible={sidebarVisible}
+      />
+      <div className="chat-container">
         <div className="header">
           <button onClick={toggleSidebar} className="sidebar-toggle-button">
             {sidebarVisible ? 'Hide Sidebar' : 'Show Sidebar'}
@@ -244,7 +239,9 @@ const Chat = () => {
           </button>
         </div>
         <div className="chat-box">
-          {messages.length === 0 ? (
+          {!currentChatId ? (
+            <p>No chats available. Click "+ New Chat" to start a conversation.</p>
+          ) : messages.length === 0 ? (
             <p>No messages yet. Start a conversation!</p>
           ) : (
             messages.map((msg) => (
@@ -259,19 +256,21 @@ const Chat = () => {
             ))
           )}
         </div>
-        <form onSubmit={sendMessage} className="input-message-container">
-          <input
-            type="text"
-            value={messageText}
-            onChange={(e) => setMessageText(e.target.value)}
-            placeholder="Type your message"
-          />
-          <input
-            type="submit"
-            value={loading ? 'Sending...' : 'Send'}
-            disabled={loading}
-          />
-        </form>
+        {currentChatId && (
+          <form onSubmit={sendMessage} className="input-message-container">
+            <input
+              type="text"
+              value={messageText}
+              onChange={(e) => setMessageText(e.target.value)}
+              placeholder="Type your message"
+            />
+            <input
+              type="submit"
+              value={loading ? 'Sending...' : 'Send'}
+              disabled={loading}
+            />
+          </form>
+        )}
       </div>
     </div>
   );

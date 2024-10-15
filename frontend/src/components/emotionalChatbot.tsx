@@ -166,6 +166,7 @@ const EmotionalChatbot: React.FC<EmotionalChatbotProps> = ({ userId }) => {
           onDeleteChat={handleDeleteChat}
           onRenameChat={handleRenameChat}
           currentChatId={currentChatId}
+          sidebarVisible={sidebarVisible} 
         />
       )}
       <div className={`chat-container ${sidebarVisible ? '' : 'expanded'}`}>

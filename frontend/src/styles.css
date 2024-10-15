@@ -1,23 +1,37 @@
+/* App Container */
 .app-container {
     display: flex;
     height: 100vh;
 }
 
+/* Chat Sidebar */
 .chat-sidebar {
     width: 250px;
-    background-color: #f4f4f4;
+    background-color: #e5eff5;
     padding: 20px;
     overflow-y: auto;
+    flex-shrink: 0;
+    /* Prevent the sidebar from shrinking */
+    transition: transform 0.3s ease;
+    /* Add transition for smooth hiding/showing */
 }
 
+.chat-sidebar.hidden {
+    transform: translateX(-100%);
+    /* Hide the sidebar by moving it left */
+    width: 0;
+    /* Ensure the sidebar doesn't occupy space when hidden */
+    padding: 0;
+    /* Remove padding when sidebar is hidden */
+}
+
+/* Chat Container */
 .chat-container {
     flex: 1;
     display: flex;
     flex-direction: column;
-}
-
-.chat-container.expanded {
     margin-left: 0;
+    transition: margin-left 0.3s ease;
 }
 
 .header {
@@ -26,7 +40,7 @@
     justify-content: center;
     position: relative;
     padding: 10px;
-    background-color: #000000;
+    background-color: black;
 }
 
 .sidebar-toggle-button {
@@ -44,15 +58,20 @@
     font-weight: bold;
 }
 
+/* Chat Box */
 .chat-box {
     flex: 1;
     padding: 20px;
     overflow-y: auto;
+    background-color: #caffff;
 }
 
+/* Input Message Container */
 .input-message-container {
     display: flex;
     padding: 10px;
+    margin: 0;
+    /* Ensure there's no margin */
 }
 
 .input-message-container input[type='text'] {
@@ -61,24 +80,26 @@
     margin-right: 10px;
 }
 
-.avatar-image {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    object-fit: cover;
+.input-message-container input[type='submit'] {
+    padding: 8px 16px;
 }
 
+/* Message Row */
 .message-row {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     margin-bottom: 10px;
 }
 
 .message-row.user {
-    flex-direction: row-reverse;
-    align-items: flex-end;
+    justify-content: flex-end;
 }
 
+.message-row.chatbot {
+    justify-content: flex-start;
+}
+
+/* Message Bubble */
 .message {
     padding: 10px;
     border-radius: 5px;
@@ -88,16 +109,23 @@
 
 .user-message {
     background-color: #dcf8c6;
-    margin-right: 10px;
-    align-self: flex-end;
+    margin: 0 10px;
 }
 
 .chatbot-message {
     background-color: #ececec;
-    margin-left: 10px;
-    align-self: flex-start;
+    margin: 0 10px;
 }
 
+/* Avatar Image */
+.avatar-image {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+/* Delete Button */
 .delete-button {
     background: none;
     border: none;
@@ -105,6 +133,7 @@
     cursor: pointer;
 }
 
+/* Chat List Item */
 .chat-list-item {
     padding: 8px;
     cursor: pointer;
@@ -121,6 +150,7 @@
     font-weight: bold;
 }
 
+/* Chat Actions */
 .chat-actions button {
     margin-left: 5px;
     background: none;

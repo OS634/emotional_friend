@@ -8,6 +8,7 @@ interface ChatSidebarProps {
   onDeleteChat: (chatId: string) => void;
   onRenameChat: (chatId: string, newName: string) => void;
   currentChatId: string;
+  sidebarVisible: boolean;
 }
 
 const ChatSidebar: React.FC<ChatSidebarProps> = ({
@@ -18,6 +19,7 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
   onDeleteChat,
   onRenameChat,
   currentChatId,
+  sidebarVisible,
 }) => {
   const [editingChatId, setEditingChatId] = useState<string | null>(null);
   const [newChatName, setNewChatName] = useState<string>('');
@@ -34,7 +36,7 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
   };
 
   return (
-    <div className="chat-sidebar">
+    <div className={`chat-sidebar ${sidebarVisible ? '' : 'hidden'}`}>
       <h3>Your Chats</h3>
       <button onClick={onCreateNewChat}>+ New Chat</button>
       <ul>
