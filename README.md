@@ -1,46 +1,3 @@
-.
-├── backend
-│ ├── .env
-│ ├── package-lock.json
-│ ├── package.json
-│ ├── server.ts
-│ ├── tsconfig.json
-├── frontend
-│ ├── node_modules
-│ ├── public
-│ │ ├── favicon.ico
-│ │ ├── index.html
-│ │ ├── logo192.png
-│ │ ├── logo512.png
-│ │ ├── manifest.json
-│ │ ├── robots.txt
-│ ├── src
-│ │ ├── assets/images
-│ │ │ ├── chatbot_image.png
-│ │ ├── components
-│ │ │ ├── Chat.tsx
-│ │ │ ├── clearChatHistory.tsx
-│ │ │ ├── emotionalChatbot.tsx
-│ │ │ ├── firebaseFunctions.tsx
-│ │ │ ├── Message.tsx
-│ │ │ ├── SendMessages.tsx
-│ │ │ ├── SignIn.tsx
-│ │ │ ├── SignOut.tsx
-│ ├── App.css
-│ ├── App.tsx
-│ ├── firebase.tsx
-│ ├── index.tsx
-│ ├── react-app-env.d.ts
-├── .dockerignore
-├── Dockerfile
-├── docker-compose.yml
-├── .gitignore
-├── LaunchPad Project Idea.docx
-├── package-lock.json
-├── package.json
-├── README.md
-├── tsconfig.json
-
 ## Available Scripts
 
 In the project directory, you can run:
@@ -80,3 +37,48 @@ To convert typescript files to javascript
     - npm start
 - backend
     - npm run dev
+
+# file
+```console
+EMOTIONAL_FRIEND
+├── backend
+│   ├── ai
+│   │   ├── models
+│   │   │   └── pretrain-AffectNet-7.pth
+│   │   └── emotion_detector.py
+│   ├── launchpad
+│   ├── node_modules
+│   ├── uploads
+│   ├── .env
+│   ├── package-lock.json
+│   ├── package.json
+│   ├── server.ts
+│   └── tsconfig.json
+├── frontend
+│   ├── node_modules
+│   ├── public
+│   └── src
+│       ├── components
+│       │   ├── Chat.tsx
+│       │   ├── ChatSidebar.css
+│       │   ├── ChatSidebar.tsx
+│       │   ├── emotionalChatbot.tsx
+│       │   ├── EmotionDetection.tsx
+│       │   ├── firebaseFunctions.tsx
+│       │   └── Message.tsx
+│       ├── App.css
+│       ├── App.tsx
+│       ├── firebase.ts
+│       ├── index.tsx
+│       ├── react-app-env.d.ts
+│       └── styles.css
+├── .dockerignore
+├── .env
+├── Dockerfile
+├── docker-compose.yml
+├── .gitignore
+├── LaunchPad Project Idea.docx
+├── package-lock.json
+├── package.json
+└── README.md
+```
