@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { User } from 'firebase/auth';
+import { Timestamp } from 'firebase/firestore';
 import { auth, provider, signInWithPopup } from '../firebase';
 import {
   getUserChats,
@@ -10,25 +12,42 @@ import {
   renameChatSession,
 } from './firebaseFunctions';
 import Message from './Message';
-import { chatbot } from './emotionalChatbot';
 import ChatSidebar from './ChatSidebar';
+import EmotionDetection from './EmotionDetection';
 
-const Chat = () => {
+// Define interfaces for better type safety
+interface Message {
+  id: string;
+  text: string;
+  uid: string;
+  photoURL: string | null;
+  createdAt: Timestamp;
+  isChatbot?: boolean;
+}
+
+interface Chat {
+  id: string;
+  name?: string;
+  createdAt: Timestamp;
+}
+
+const Chat: React.FC = () => {
+  // State with proper typing
   const [messageText, setMessageText] = useState<string>('');
-  const [messages, setMessages] = useState<any[]>([]);
-  const [user, setUser] = useState<any>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [currentChatId, setCurrentChatId] = useState<string>('');
-  const [chats, setChats] = useState<any[]>([]);
+  const [chats, setChats] = useState<Chat[]>([]);
   const [sidebarVisible, setSidebarVisible] = useState<boolean>(true);
+  const [currentEmotion, setCurrentEmotion] = useState<string>('neutral');
 
+  // Auth state listener
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(async (user) => {
-      if (user) {
-        setUser(user);
-        await initializeChats(user.uid);
-      } else {
-        setUser(null);
+    const unsubscribe = auth.onAuthStateChanged((currentUser) => {
+      setUser(currentUser);
+      if (currentUser) {
+        initializeChats(currentUser.uid);
       }
     });
 
@@ -36,107 +55,113 @@ const Chat = () => {
   }, []);
 
   const initializeChats = async (userId: string) => {
-    const userChats = await getUserChats(userId);
-    setChats(userChats);
+    try {
+      const userChats = await getUserChats(userId);
+      setChats(userChats);
 
-    if (userChats.length > 0) {
-      setCurrentChatId(userChats[0].id);
-      loadMessages(userId, userChats[0].id);
-    } else {
-      // No chats available
-      setCurrentChatId('');
-      setMessages([]);
+      if (userChats.length > 0) {
+        setCurrentChatId(userChats[0].id);
+        await loadMessages(userId, userChats[0].id);
+      }
+    } catch (error) {
+      console.error('Error initializing chats:', error);
     }
   };
 
   const loadMessages = async (userId: string, chatId: string) => {
-    const chatMessages = await getChatMessages(userId, chatId);
-    setMessages(chatMessages);
+    try {
+      const chatMessages = await getChatMessages(userId, chatId);
+      setMessages(chatMessages);
+    } catch (error) {
+      console.error('Error loading messages:', error);
+    }
   };
 
-  const sendMessage = async (e: React.FormEvent) => {
+// Inside Chat.tsx, update the handleSendMessage function:
+
+  const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!user || !currentChatId) {
-      console.error('User is not authenticated or chat not initialized');
+    if (!user || !currentChatId || !messageText.trim()) {
       return;
     }
 
-    const userId = user.uid;
     setLoading(true);
 
     try {
-      const userPhotoURL = user.photoURL || null;
-
+      // Send user message
       await sendMessageToFirebase(
         messageText,
-        userId,
+        user.uid,
         currentChatId,
         false,
-        userPhotoURL
+        user.photoURL
       );
 
-      const emotion = 'happy'; // Placeholder for emotion detection
-      const botResponse = await chatbot(messageText, emotion);
+      // Get chatbot response from backend
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/chatbot`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userInput: messageText,
+          emotion: 'neutral', // This will be updated when emotion detection is working
+          messageHistory: messages.slice(-5).map(msg => ({
+            isUser: msg.uid === user.uid,
+            text: msg.text
+          }))
+        }),
+      });
 
-      // Chatbot's photoURL
-      const chatbotPhotoURL = '/assets/images/chatbot_image.png'; // Updated path
+      if (!response.ok) {
+        throw new Error('Failed to get chatbot response');
+      }
 
+      const data = await response.json();
+      
+      // Send chatbot response
+      const chatbotPhotoURL = '/assets/images/chatbot_image.png';
       await sendMessageToFirebase(
-        botResponse,
-        userId,
+        data.response,
+        user.uid,
         currentChatId,
         true,
         chatbotPhotoURL
       );
 
+      // Reset input and reload messages
       setMessageText('');
-      loadMessages(userId, currentChatId);
+      await loadMessages(user.uid, currentChatId);
     } catch (error) {
       console.error('Error sending message:', error);
+      // Add user feedback for error
+      alert('Error sending message. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const deleteMessage = async (messageId: string) => {
-    if (!user || !currentChatId) {
-      console.error('User is not authenticated or chat not initialized');
-      return;
-    }
-
-    const userId = user.uid;
+  const handleDeleteMessage = async (messageId: string) => {
+    if (!user || !currentChatId) return;
 
     try {
-      await deleteMessageFromFirebase(userId, currentChatId, messageId);
-      loadMessages(userId, currentChatId);
+      await deleteMessageFromFirebase(user.uid, currentChatId, messageId);
+      await loadMessages(user.uid, currentChatId);
     } catch (error) {
       console.error('Error deleting message:', error);
     }
   };
 
-  const handleSelectChat = (chatId: string) => {
-    if (!user) {
-      console.error('User is not authenticated');
-      return;
-    }
-    setCurrentChatId(chatId);
-    loadMessages(user.uid, chatId);
-  };
-
   const handleCreateNewChat = async () => {
-    if (!user) {
-      console.error('User is not authenticated');
-      return;
-    }
-    const userId = user.uid;
+    if (!user) return;
 
     try {
-      const newChatId = await createNewChat(userId);
-      const newChat = {
+      const newChatId = await createNewChat(user.uid);
+      const newChat: Chat = {
         id: newChatId,
-        createdAt: new Date(),
         name: `Chat ${new Date().toLocaleString()}`,
+        createdAt: Timestamp.now()
       };
       setChats([newChat, ...chats]);
       setCurrentChatId(newChatId);
@@ -147,20 +172,16 @@ const Chat = () => {
   };
 
   const handleDeleteChat = async (chatId: string) => {
-    if (!user) {
-      console.error('User is not authenticated');
-      return;
-    }
-    const userId = user.uid;
+    if (!user) return;
 
     try {
-      await deleteChatSession(userId, chatId);
+      await deleteChatSession(user.uid, chatId);
       const updatedChats = chats.filter((chat) => chat.id !== chatId);
       setChats(updatedChats);
 
       if (updatedChats.length > 0) {
         setCurrentChatId(updatedChats[0].id);
-        loadMessages(userId, updatedChats[0].id);
+        await loadMessages(user.uid, updatedChats[0].id);
       } else {
         setCurrentChatId('');
         setMessages([]);
@@ -171,18 +192,13 @@ const Chat = () => {
   };
 
   const handleRenameChat = async (chatId: string, newName: string) => {
-    if (!user) {
-      console.error('User is not authenticated');
-      return;
-    }
-    const userId = user.uid;
+    if (!user) return;
 
     try {
-      await renameChatSession(userId, chatId, newName);
-      const updatedChats = chats.map((chat) =>
+      await renameChatSession(user.uid, chatId, newName);
+      setChats(chats.map((chat) =>
         chat.id === chatId ? { ...chat, name: newName } : chat
-      );
-      setChats(updatedChats);
+      ));
     } catch (error) {
       console.error('Error renaming chat:', error);
     }
@@ -192,15 +208,8 @@ const Chat = () => {
     setSidebarVisible(!sidebarVisible);
   };
 
-  const signOut = () => {
-    auth.signOut();
-  };
-
-  const signInWithGoogle = () => {
+  const handleSignInWithGoogle = () => {
     signInWithPopup(auth, provider)
-      .then((result) => {
-        console.log('User signed in:', result.user);
-      })
       .catch((error) => {
         console.error('Error signing in with Google:', error);
       });
@@ -210,17 +219,19 @@ const Chat = () => {
     return (
       <div className="login-screen">
         <h2>Welcome to Emotional Friend Chat!</h2>
-        <button onClick={signInWithGoogle}>Login with Google</button>
+        <button onClick={handleSignInWithGoogle}>Login with Google</button>
       </div>
     );
   }
-
 
   return (
     <div className="app-container">
       <ChatSidebar
         userId={user.uid}
-        onSelectChat={handleSelectChat}
+        onSelectChat={(chatId) => {
+          setCurrentChatId(chatId);
+          loadMessages(user.uid, chatId);
+        }}
         chats={chats}
         onCreateNewChat={handleCreateNewChat}
         onDeleteChat={handleDeleteChat}
@@ -234,10 +245,14 @@ const Chat = () => {
             {sidebarVisible ? 'Hide Sidebar' : 'Show Sidebar'}
           </button>
           <span className="username">{user.displayName}</span>
-          <button onClick={signOut} className="signout-button">
+          <div className='emotion-status'>
+            Current Emotion: {currentEmotion}
+          </div>
+          <button onClick={() => auth.signOut()} className="signout-button">
             Sign Out
           </button>
         </div>
+        <EmotionDetection onEmotionDetected={setCurrentEmotion} />
         <div className="chat-box">
           {!currentChatId ? (
             <p>No chats available. Click "+ New Chat" to start a conversation.</p>
@@ -251,23 +266,24 @@ const Chat = () => {
                 messageText={msg.text}
                 photoURL={msg.photoURL}
                 isUser={msg.uid === user.uid}
-                onDelete={deleteMessage}
+                onDelete={handleDeleteMessage}
               />
             ))
           )}
         </div>
         {currentChatId && (
-          <form onSubmit={sendMessage} className="input-message-container">
+          <form onSubmit={handleSendMessage} className="input-message-container">
             <input
               type="text"
               value={messageText}
               onChange={(e) => setMessageText(e.target.value)}
               placeholder="Type your message"
+              disabled={loading}
             />
             <input
               type="submit"
               value={loading ? 'Sending...' : 'Send'}
-              disabled={loading}
+              disabled={loading || !messageText.trim()}
             />
           </form>
         )}
