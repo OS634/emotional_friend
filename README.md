@@ -73,3 +73,10 @@ To convert typescript files to javascript
 
 - https://www.youtube.com/watch?v=Js9BsBsczE8
 - https://tailwindcss.com/
+
+
+# How to run
+- frontend
+    - npm start
+- backend
+    - npm run dev

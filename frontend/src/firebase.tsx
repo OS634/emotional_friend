@@ -16,7 +16,7 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
-// Initialize Firestore (database)
+// Initialize Firestore
 const db = getFirestore(app);
 
 // Initialize Firebase Authentication
@@ -25,7 +25,7 @@ const auth = getAuth(app);
 // Initialize Google Auth Provider
 const provider = new GoogleAuthProvider();
 
-// Optionally initialize Firebase Analytics
+// Initialize Firebase Analytics
 const analytics = getAnalytics(app);
 
 export { db, auth, provider, signInWithPopup };
