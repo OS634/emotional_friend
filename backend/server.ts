@@ -1,4 +1,4 @@
-import express, { Request, Response } from 'express';
+import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import OpenAI from 'openai';
@@ -13,6 +13,18 @@ dotenv.config();
 // Initialize Express app
 const app = express();
 
+// Type definitions
+interface ChatMessage {
+  isUser: boolean;
+  text: string;
+}
+
+interface ChatbotRequestBody {
+  userInput: string;
+  emotion: string;
+  messageHistory?: ChatMessage[];
+}
+
 // Configure CORS
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
@@ -26,14 +38,14 @@ app.use(express.json());
 
 // Configure multer for handling file uploads
 const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
+  destination: (req, file, cb) => {
     const uploadDir = path.join(__dirname, 'uploads');
     if (!fs.existsSync(uploadDir)){
       fs.mkdirSync(uploadDir, { recursive: true });
     }
     cb(null, uploadDir);
   },
-  filename: function (req, file, cb) {
+  filename: (req, file, cb) => {
     cb(null, `${Date.now()}-${file.originalname}`);
   }
 });
@@ -51,14 +63,14 @@ const openai = new OpenAI({
 });
 
 // Utility function to clean up temporary files
-const cleanupFile = (filePath: string) => {
+const cleanupFile = (filePath: string): void => {
   fs.unlink(filePath, (err) => {
     if (err) console.error('Error deleting temporary file:', err);
   });
 };
 
 // Endpoint for emotion detection
-app.post('/detect-emotion', upload.single('image'), async (req: Request, res: Response) => {
+app.post('/detect-emotion', upload.single('image'), (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'No image file provided' });
   }
@@ -124,24 +136,28 @@ app.post('/detect-emotion', upload.single('image'), async (req: Request, res: Re
   }
 });
 
-// Enhanced chatbot endpoint
-app.post('/chatbot', async (req: Request, res: Response) => {
-  const { userInput, emotion, messageHistory } = req.body;
+// Enhanced chatbot endpoint with emotion integration
+app.post('/chatbot', async (req, res) => {
+  const { userInput, emotion, messageHistory } = req.body as ChatbotRequestBody;
 
   if (!userInput) {
     return res.status(400).json({ error: 'User input is required' });
   }
 
   try {
+    // Construct the system message with emotion context
+    const systemMessage = {
+      role: 'system',
+      content: `You are an empathetic AI assistant. The user is currently feeling ${emotion || 'neutral'}. 
+                Adjust your response tone and content to be appropriate for their emotional state.
+                If they're feeling negative emotions (sad, angry, fearful), be extra supportive and understanding.
+                If they're feeling positive emotions (happy, excited), match their enthusiasm.
+                If they're neutral, maintain a balanced and professional tone.
+                Always maintain a helpful and professional demeanor while showing emotional intelligence.`
+    };
+
     // Construct the conversation context
-    const messages = [
-      {
-        role: 'system',
-        content: `You are an empathetic AI assistant who understands that the user is currently feeling ${emotion || 'neutral'}. 
-                 Respond with emotional intelligence and appropriate support while maintaining a helpful and professional tone. 
-                 If the emotion is negative, offer gentle encouragement and understanding.`
-      }
-    ];
+    const messages = [systemMessage];
 
     // Add message history if provided
     if (messageHistory && Array.isArray(messageHistory)) {
@@ -156,7 +172,7 @@ app.post('/chatbot', async (req: Request, res: Response) => {
 
     const completion = await openai.chat.completions.create({
       model: 'gpt-4',
-      messages: messages,
+      messages: messages as any,
       max_tokens: 150,
       temperature: 0.7,
       presence_penalty: 0.6,
@@ -184,7 +200,7 @@ app.post('/chatbot', async (req: Request, res: Response) => {
 });
 
 // Health check endpoint
-app.get('/health', (req: Request, res: Response) => {
+app.get('/health', (req, res) => {
   res.json({ 
     status: 'healthy',
     timestamp: new Date().toISOString()
@@ -192,7 +208,7 @@ app.get('/health', (req: Request, res: Response) => {
 });
 
 // Error handling middleware
-app.use((err: any, req: Request, res: Response, next: any) => {
+app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error('Unhandled error:', err);
   res.status(500).json({ 
     error: 'Internal server error',

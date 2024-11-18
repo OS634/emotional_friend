@@ -106,7 +106,7 @@ const Chat: React.FC = () => {
         },
         body: JSON.stringify({
           userInput: messageText,
-          emotion: 'neutral', // This will be updated when emotion detection is working
+          emotion: {currentEmotion},
           messageHistory: messages.slice(-5).map(msg => ({
             isUser: msg.uid === user.uid,
             text: msg.text
