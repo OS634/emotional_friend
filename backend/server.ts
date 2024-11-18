@@ -1,4 +1,5 @@
 import express from 'express';
+import { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import OpenAI from 'openai';
@@ -72,7 +73,8 @@ const cleanupFile = (filePath: string): void => {
 // Endpoint for emotion detection
 app.post('/detect-emotion', upload.single('image'), (req, res) => {
   if (!req.file) {
-    return res.status(400).json({ error: 'No image file provided' });
+    res.status(400).json({ error: 'No image file provided' });
+    return;
   }
 
   try {
@@ -137,11 +139,12 @@ app.post('/detect-emotion', upload.single('image'), (req, res) => {
 });
 
 // Enhanced chatbot endpoint with emotion integration
-app.post('/chatbot', async (req, res) => {
+app.post('/chatbot', async (req: express.Request, res: express.Response): Promise<void> => {
   const { userInput, emotion, messageHistory } = req.body as ChatbotRequestBody;
 
   if (!userInput) {
-    return res.status(400).json({ error: 'User input is required' });
+    res.status(400).json({ error: 'User input is required' });
+    return;
   }
 
   try {
