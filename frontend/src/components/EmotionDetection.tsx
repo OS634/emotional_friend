@@ -1,31 +1,36 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Camera } from 'lucide-react';
 
 interface EmotionDetectionProps {
   onEmotionDetected: (emotion: string) => void;
 }
 
 const EmotionDetection: React.FC<EmotionDetectionProps> = ({ onEmotionDetected }) => {
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [error, setError] = useState('');
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
-  useEffect(() => {
-    initializeCamera();
-    return () => stopCamera();
-  }, []);
-
-  const initializeCamera = async () => {
+  const startCamera = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'user' } 
+        video: { 
+          facingMode: 'user',
+          width: { ideal: 640 },
+          height: { ideal: 480 }
+        } 
       });
       
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         streamRef.current = stream;
+        setIsStreaming(true);
+        setError('');
         startEmotionDetection();
       }
     } catch (err) {
-      console.error('Camera access error:', err);
+      setError('Could not access camera. Please ensure camera permissions are granted.');
+      console.error('Error accessing camera:', err);
     }
   };
 
@@ -33,66 +38,67 @@ const EmotionDetection: React.FC<EmotionDetectionProps> = ({ onEmotionDetected }
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
+      setIsStreaming(false);
     }
   };
 
-  const startEmotionDetection = () => {
-    setInterval(detectEmotion, 5000);
+  const startEmotionDetection = async () => {
+    // Placeholder for emotion detection logic
+    // In a real implementation, you would:
+    // 1. Capture frames from video at regular intervals
+    // 2. Process frames through an emotion detection model
+    // 3. Call onEmotionDetected with the detected emotion
+    
+    const mockEmotions = ['happy', 'sad', 'neutral', 'angry'];
+    setInterval(() => {
+      const randomEmotion = mockEmotions[Math.floor(Math.random() * mockEmotions.length)];
+      onEmotionDetected(randomEmotion);
+    }, 3000);
   };
 
-  const detectEmotion = async () => {
-    if (!videoRef.current || !videoRef.current.videoWidth) return;
+  useEffect(() => {
+    return () => {
+      stopCamera();
+    };
+  }, []);
 
-    try {
-      const canvas = document.createElement('canvas');
-      canvas.width = videoRef.current.videoWidth;
-      canvas.height = videoRef.current.videoHeight;
-      const ctx = canvas.getContext('2d');
-      
-      if (!ctx) throw new Error('Canvas context error');
-
-      ctx.drawImage(videoRef.current, 0, 0);
-      
-      const blob = await new Promise<Blob>((resolve) => 
-        canvas.toBlob((b) => resolve(b!), 'image/jpeg', 0.8)
-      );
-
-      const formData = new FormData();
-      formData.append('image', blob);
-
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/detect-emotion`, {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) throw new Error('Emotion detection failed');
-
-      const data = await response.json();
-      if (data.emotion) {
-        onEmotionDetected(data.emotion.emotion);
-      }
-    } catch (err) {
-      console.error('Emotion detection error:', err);
-    }
-  };
-
-  // Return the video element with position absolute and opacity 0 to completely hide it
   return (
-    <div style={{ 
-      position: 'absolute', 
-      width: '1px', 
-      height: '1px', 
-      overflow: 'hidden',
-      clip: 'rect(0, 0, 0, 0)',
-      whiteSpace: 'nowrap'
-    }}>
-      <video
-        ref={videoRef}
-        autoPlay
-        playsInline
-        muted
-        style={{ opacity: 0, position: 'absolute' }}
-      />
+    <div className="w-full max-w-md mx-auto p-4 bg-gray-100 rounded-lg shadow">
+      <div className="relative">
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          muted
+          className="w-full h-64 bg-black rounded-lg"
+        />
+        {!isStreaming && (
+          <div className="absolute inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50 rounded-lg">
+            <button
+              onClick={startCamera}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+            >
+              <Camera className="w-5 h-5" />
+              Start Camera
+            </button>
+          </div>
+        )}
+      </div>
+      
+      {error && (
+        <div className="mt-4 p-3 bg-red-100 text-red-700 rounded">
+          {error}
+        </div>
+      )}
+      
+      {isStreaming && (
+        <button
+          onClick={stopCamera}
+          className="mt-4 w-full px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+        >
+          Stop Camera
+        </button>
+      )}
     </div>
   );
 };

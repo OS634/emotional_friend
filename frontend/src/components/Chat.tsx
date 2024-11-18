@@ -77,6 +77,8 @@ const Chat: React.FC = () => {
     }
   };
 
+// Inside Chat.tsx, update the handleSendMessage function:
+
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -104,7 +106,7 @@ const Chat: React.FC = () => {
         },
         body: JSON.stringify({
           userInput: messageText,
-          emotion: currentEmotion,  // Fixed: removed curly braces
+          emotion: 'neutral', // This will be updated when emotion detection is working
           messageHistory: messages.slice(-5).map(msg => ({
             isUser: msg.uid === user.uid,
             text: msg.text
@@ -237,23 +239,20 @@ const Chat: React.FC = () => {
         currentChatId={currentChatId}
         sidebarVisible={sidebarVisible}
       />
-      <div className={`chat-container ${!sidebarVisible ? 'expanded' : ''}`}>
+      <div className="chat-container">
         <div className="header">
           <button onClick={toggleSidebar} className="sidebar-toggle-button">
             {sidebarVisible ? 'Hide Sidebar' : 'Show Sidebar'}
           </button>
           <span className="username">{user.displayName}</span>
-          <div className="emotion-status">
+          <div className='emotion-status'>
             Current Emotion: {currentEmotion}
           </div>
           <button onClick={() => auth.signOut()} className="signout-button">
             Sign Out
           </button>
         </div>
-        
-        {/* Hidden EmotionDetection component */}
         <EmotionDetection onEmotionDetected={setCurrentEmotion} />
-        
         <div className="chat-box">
           {!currentChatId ? (
             <p>No chats available. Click "+ New Chat" to start a conversation.</p>
@@ -280,15 +279,12 @@ const Chat: React.FC = () => {
               onChange={(e) => setMessageText(e.target.value)}
               placeholder="Type your message"
               disabled={loading}
-              className="message-input"
             />
-            <button
+            <input
               type="submit"
+              value={loading ? 'Sending...' : 'Send'}
               disabled={loading || !messageText.trim()}
-              className="send-button"
-            >
-              {loading ? 'Sending...' : 'Send'}
-            </button>
+            />
           </form>
         )}
       </div>
