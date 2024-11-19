@@ -94,7 +94,7 @@ app.post('/detect-emotion', upload.single('image'), async (req: Request, res: Re
 
       if (code !== 0) {
         console.error('Python process error:', errorOutput);
-        return res.status(500).json({ 
+        res.status(500).json({ 
           error: 'Emotion detection failed',
           details: errorOutput
         });
@@ -125,7 +125,8 @@ app.post('/detect-emotion', upload.single('image'), async (req: Request, res: Re
 });
 
 // Enhanced chatbot endpoint
-app.post('/chatbot', async (req: Request, res: Response) => {
+app.post('/chatbot', async (req: Request, res: Response): Promise<void> => {
+
   const { userInput, emotion, messageHistory } = req.body;
 
   if (!userInput) {
