@@ -60,8 +60,7 @@ const cleanupFile = (filePath: string) => {
 // Endpoint for emotion detection
 app.post('/detect-emotion', upload.single('image'), async (req: Request, res: Response) => {
   if (!req.file) {
-    res.status(400).json({ error: 'No image file provided' });
-    return;
+    return res.status(400).json({ error: 'No image file provided' });
   }
 
   try {
@@ -127,11 +126,11 @@ app.post('/detect-emotion', upload.single('image'), async (req: Request, res: Re
 
 // Enhanced chatbot endpoint
 app.post('/chatbot', async (req: Request, res: Response): Promise<void> => {
+
   const { userInput, emotion, messageHistory } = req.body;
 
   if (!userInput) {
-    res.status(400).json({ error: 'User input is required' });
-    return;
+    return res.status(400).json({ error: 'User input is required' });
   }
 
   try {
@@ -158,7 +157,7 @@ app.post('/chatbot', async (req: Request, res: Response): Promise<void> => {
 
     const completion = await openai.chat.completions.create({
       model: 'gpt-4',
-      messages: messages as any,
+      messages: messages,
       max_tokens: 150,
       temperature: 0.7,
       presence_penalty: 0.6,
