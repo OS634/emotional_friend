@@ -14,6 +14,7 @@ import {
 import Message from './Message';
 import ChatSidebar from './ChatSidebar';
 import EmotionDetection from './EmotionDetection';
+import LoginScreen from './LoginScreen';
 
 // Define interfaces for better type safety
 interface Message {
@@ -216,12 +217,7 @@ const Chat: React.FC = () => {
   };
 
   if (!user) {
-    return (
-      <div className="login-screen">
-        <h2>Welcome to Emotional Friend Chat!</h2>
-        <button onClick={handleSignInWithGoogle}>Login with Google</button>
-      </div>
-    );
+    return <LoginScreen onLogin={handleSignInWithGoogle} />;
   }
 
   return (
